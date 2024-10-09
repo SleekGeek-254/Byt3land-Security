@@ -1,161 +1,130 @@
-import React, { useState, useCallback } from 'react';
-import { Lock, Unlock, Clock } from 'lucide-react';
-import './LatticeEncryption.css';
+import React, { useState, useEffect, useCallback } from "react";
+import { Lock, Unlock, Clock, Loader2 } from "lucide-react";
+import "./LatticeEncryption.css";
 
-const q = 4294967291;
-const n = 1024;
-const m = 4096;
-const indice = 10;
-const BLOCK_SIZE = 128; // Define a block size for padding
+const LatticeEncryption = () => {
+  const [message, setMessage] = useState("");
+  const [encryptedMessage, setEncryptedMessage] = useState("");
+  const [decryptedMessage, setDecryptedMessage] = useState({
+    correct: "",
+    incorrect: "",
+  });
+  const [timestamps, setTimestamps] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [worker, setWorker] = useState(null);
+  const [keys, setKeys] = useState(null);
 
-// Secure random number generation using Web Crypto API
-const getRandomValues = (length) => {
-  const QUOTA = 65536 / 4;
-  const array = new Uint32Array(length);
-  for (let i = 0; i < length; i += QUOTA) {
-    const subLength = Math.min(length - i, QUOTA);
-    window.crypto.getRandomValues(array.subarray(i, i + subLength));
-  }
-  return array;
-};
+  useEffect(() => {
+    const newWorker = new Worker(
+      new URL("./lattice-encryption.worker.js", import.meta.url)
+    );
+    setWorker(newWorker);
 
-// Constant-time discrete Gaussian sampler using the Box-Muller transform
-const discreteGaussianSample = (mean = 0, sigma = 1) => {
-  let u1, u2, z0;
-  const array = getRandomValues(2);
+    newWorker.onmessage = (e) => {
+      const { action, result, keys } = e.data;
+      switch (action) {
+        case "encryptResult":
+          setEncryptedMessage(JSON.stringify(result));
+          break;
+        case "decryptResult":
+          setDecryptedMessage((prevState) => ({
+            ...prevState,
+            [keys ? "correct" : "incorrect"]: result,
+          }));
+          break;
+        case "keysGenerated":
+          setKeys(keys);
+          break;
+      }
+      setIsLoading(false);
+    };
 
-  do {
-    u1 = array[0] / 4294967296;
-    u2 = array[1] / 4294967296;
-  } while (u1 === 0);
+    return () => {
+      newWorker.terminate();
+    };
+  }, []);
 
-  z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-  return Math.round(z0 * sigma + mean);
-};
+  const handleEncrypt = useCallback(async () => {
+    if (!worker || !keys) return;
 
-// Helper functions
-const generateMatrix = (rows, cols) => {
-  const matrix = getRandomValues(rows * cols);
-  return Array.from({ length: rows }, (_, i) => 
-    Array.from({ length: cols }, (_, j) => matrix[i * cols + j] % q)
-  );
-};
+    setIsLoading(true);
+    const startEncryption = performance.now();
 
-const generateVector = (length) => {
-  const vector = getRandomValues(length);
-  return Array.from(vector, val => val % q);
-};
+    worker.postMessage({
+      action: "encrypt",
+      data: { message, A: keys.A, b: keys.b },
+    });
 
-const dotProduct = (a, b) => {
-  let sum = 0n;
-  for (let i = 0; i < a.length; i++) {
-    sum += BigInt(a[i]) * BigInt(b[i]);
-  }
-  return Number(sum % BigInt(q));
-};
+    worker.onmessage = (e) => {
+      if (e.data.action === "encryptResult") {
+        const endEncryption = performance.now();
+        setEncryptedMessage(JSON.stringify(e.data.result));
+        setTimestamps((prev) => ({
+          ...prev,
+          encryption: endEncryption - startEncryption,
+        }));
 
+        // Start decryption with correct key
+        const startDecryptionCorrect = performance.now();
+        worker.postMessage({
+          action: "decrypt",
+          data: { encryptedMessage: e.data.result, s: keys.s },
+        });
 
-const textToBinary = (text) => {
-    return text.split('').map(char => char.charCodeAt(0).toString(2).padStart(8, '0')).join('');
-  };
-  
-  const binaryToText = (binary) => {
-    return binary.match(/.{1,8}/g).map(byte => String.fromCharCode(parseInt(byte, 2))).join('');
-  };
-  
-  // New padding functions
-  const addPadding = (binary) => {
-    const paddingLength = BLOCK_SIZE - (binary.length % BLOCK_SIZE);
-    const paddingBits = paddingLength.toString(2).padStart(8, '0');
-    return binary + '1' + '0'.repeat(paddingLength - 1) + paddingBits;
-  };
-  
-  const removePadding = (binary) => {
-    const paddingLengthBits = binary.slice(-8);
-    const paddingLength = parseInt(paddingLengthBits, 2);
-    return binary.slice(0, -paddingLength - 8);
-  };
+        worker.onmessage = (e2) => {
+          if (e2.data.action === "decryptResult") {
+            const endDecryptionCorrect = performance.now();
+            setDecryptedMessage((prev) => ({
+              ...prev,
+              correct: e2.data.result,
+            }));
+            setTimestamps((prev) => ({
+              ...prev,
+              decryptionCorrect: endDecryptionCorrect - startDecryptionCorrect,
+            }));
 
-  const LatticeEncryption = () => {
-    const [message, setMessage] = useState('');
-    const [encryptedMessage, setEncryptedMessage] = useState('');
-    const [decryptedMessage, setDecryptedMessage] = useState('');
-    const [timestamps, setTimestamps] = useState({});
-  
-    const bobKeyGeneration = useCallback(() => {
-      const A = generateMatrix(m, n);
-      const s = generateVector(n);
-      const e = Array.from({ length: m }, () => discreteGaussianSample(0, 3));
-      const b = A.map((row, i) => (dotProduct(row, s) + e[i]) % q);
-      return { A, b, s };
-    }, []);
-  
-    const aliceEncrypt = useCallback((message, A, b) => {
-      const binaryMessage = textToBinary(message);
-      const paddedBinary = addPadding(binaryMessage);
-      return paddedBinary.split('').map(bit => {
-        const selectedIndices = new Set();
-        const randomIndices = getRandomValues(indice);
-        for (let i = 0; i < indice; i++) {
-          selectedIndices.add(randomIndices[i] % m);
-        }
-        const indices = Array.from(selectedIndices);
-        
-        const rowSumA = indices.reduce((sum, index) =>
-          sum.map((val, i) => (val + A[index][i]) % q), Array(n).fill(0));
-        
-        const rowSumB = indices.reduce((sum, index) =>
-          (sum + b[index]) % q, 0);
-          
-        const c2 = bit === '0' ? rowSumB : (rowSumB + Math.floor(q / 2)) % q;
-        return { c1: rowSumA, c2 };
-      });
-    }, []);
-  
-    const bobDecrypt = useCallback((encryptedBits, s) => {
-      const decryptedPaddedBinary = encryptedBits.map(({ c1, c2 }) => {
-        const innerProduct = dotProduct(c1, s);
-        const decrypted = (c2 - innerProduct + q) % q;
-        return decrypted < q / 4 || decrypted > 3 * q / 4 ? '0' : '1';
-      }).join('');
-      return removePadding(decryptedPaddedBinary);
-    }, []);
-  
-    const handleEncrypt = useCallback(() => {
-      const startEncryption = performance.now();
-      const { A, b, s } = bobKeyGeneration();
-      const encrypted = aliceEncrypt(message, A, b);
-      const endEncryption = performance.now();
-  
-      setEncryptedMessage(JSON.stringify(encrypted));
-      
-      const startDecryptionCorrect = performance.now();
-      const decryptedBinary = bobDecrypt(encrypted, s);
-      const endDecryptionCorrect = performance.now();
-  
-      const startDecryptionIncorrect = performance.now();
-      const incorrect_s = generateVector(n);
-      const incorrectDecryptedBinary = bobDecrypt(encrypted, incorrect_s);
-      const endDecryptionIncorrect = performance.now();
-  
-      setDecryptedMessage({
-        correct: binaryToText(decryptedBinary),
-        incorrect: binaryToText(incorrectDecryptedBinary)
-      });
-  
-      setTimestamps({
-        encryption: endEncryption - startEncryption,
-        decryptionCorrect: endDecryptionCorrect - startDecryptionCorrect,
-        decryptionIncorrect: endDecryptionIncorrect - startDecryptionIncorrect
-      });
-    }, [message]);
-  
+            // Start decryption with incorrect key
+            const startDecryptionIncorrect = performance.now();
+            const incorrect_s = Array.from({ length: keys.s.length }, () =>
+              Math.floor(Math.random() * 4294967291)
+            );
+            worker.postMessage({
+              action: "decrypt",
+              data: { encryptedMessage: e.data.result, s: incorrect_s },
+            });
+
+            worker.onmessage = (e3) => {
+              if (e3.data.action === "decryptResult") {
+                const endDecryptionIncorrect = performance.now();
+                setDecryptedMessage((prev) => ({
+                  ...prev,
+                  incorrect: e3.data.result,
+                }));
+                setTimestamps((prev) => ({
+                  ...prev,
+                  decryptionIncorrect:
+                    endDecryptionIncorrect - startDecryptionIncorrect,
+                }));
+                setIsLoading(false);
+              }
+            };
+          }
+        };
+      }
+    };
+  }, [message, worker, keys]);
+
+  useEffect(() => {
+    if (worker) {
+      worker.postMessage({ action: "generateKeys" });
+    }
+  }, [worker]);
 
   return (
     <div className="container">
       <div className="content">
         <h1 className="title">Lattice-based Encryption Demo</h1>
-        
+
         <div className="bento-grid">
           <div className="bento-box input-area">
             <h2 className="bento-box-title">
@@ -168,22 +137,30 @@ const textToBinary = (text) => {
               placeholder="Enter message to encrypt"
               className="input-textarea"
             />
-            <button onClick={handleEncrypt} className="encrypt-button">
-              <Lock size={16} />
-              Encrypt
+            <button
+              onClick={handleEncrypt}
+              className="encrypt-button"
+              disabled={isLoading || !keys}
+            >
+              {isLoading ? (
+                <div className="loader-spin"></div>
+              ) : (
+                <Lock size={16} className="mr-2" />
+              )}
+              {isLoading ? "Processing..." : "Encrypt"}
             </button>
           </div>
-          
+
           <div className="bento-box">
             <h2 className="bento-box-title">
               <Lock size={20} />
               Encrypted Message
             </h2>
             <pre className="message-display">
-              {"encryptedMessage" || 'Encrypted message will appear here'}
+              {"encryptedMessage" || "Encrypted message will appear here"}
             </pre>
           </div>
-          
+
           <div className="bento-box">
             <h2 className="bento-box-title">
               <Unlock size={20} />
@@ -191,26 +168,38 @@ const textToBinary = (text) => {
             </h2>
             <div className="message-display decrypted-message decrypted-message-correct">
               <p className="timestamp-label">Correct key:</p>
-              <p>{decryptedMessage.correct || 'Awaiting decryption...'}</p>
+              <p>{decryptedMessage.correct || "Awaiting decryption..."}</p>
             </div>
             <div className="message-display decrypted-message decrypted-message-incorrect">
               <p className="timestamp-label">Incorrect key:</p>
-              <p>{decryptedMessage.incorrect || 'Awaiting decryption...'}</p>
+              <p>{decryptedMessage.incorrect || "Awaiting decryption..."}</p>
             </div>
           </div>
-          
+
           <div className="timestamps">
             <div className="timestamp">
               <p className="timestamp-label">Encryption time:</p>
-              <p className="timestamp-value">{timestamps.encryption ? `${timestamps.encryption.toFixed(2)} ms` : 'N/A'}</p>
+              <p className="timestamp-value">
+                {timestamps.encryption
+                  ? `${timestamps.encryption.toFixed(2)} ms`
+                  : "N/A"}
+              </p>
             </div>
             <div className="timestamp">
               <p className="timestamp-label">Decryption time (correct):</p>
-              <p className="timestamp-value">{timestamps.decryptionCorrect ? `${timestamps.decryptionCorrect.toFixed(2)} ms` : 'N/A'}</p>
+              <p className="timestamp-value">
+                {timestamps.decryptionCorrect
+                  ? `${timestamps.decryptionCorrect.toFixed(2)} ms`
+                  : "N/A"}
+              </p>
             </div>
             <div className="timestamp">
               <p className="timestamp-label">Decryption time (incorrect):</p>
-              <p className="timestamp-value">{timestamps.decryptionIncorrect ? `${timestamps.decryptionIncorrect.toFixed(2)} ms` : 'N/A'}</p>
+              <p className="timestamp-value">
+                {timestamps.decryptionIncorrect
+                  ? `${timestamps.decryptionIncorrect.toFixed(2)} ms`
+                  : "N/A"}
+              </p>
             </div>
           </div>
         </div>
