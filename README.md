@@ -1,4 +1,4 @@
-# Lattice-based Encryption Demo
+# REACT-APP Lattice-based Encryption Demo
 
 This project demonstrates a basic implementation of lattice-based encryption using the Learning With Errors (LWE) problem. It's designed as an educational tool to explore post-quantum cryptography concepts.
 
