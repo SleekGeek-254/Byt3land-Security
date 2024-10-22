@@ -12,6 +12,8 @@ This project demonstrates a basic implementation of lattice-based encryption usi
 - [Additional Findings](#additional-findings)
 - [Future Implementations](#future-implementations)
 - [Disclaimer](#disclaimer)
+- [License](#license)
+
 
 ## Overview
 ![image](https://github.com/user-attachments/assets/76a554d8-76dc-4fdf-b683-cc8fe2832cdb)
@@ -31,7 +33,7 @@ This React-based web application showcases a simple lattice-based encryption sys
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/lattice-encryption-demo.git
+   git clone https://github.com/SleekGeek-254/Byt3land-Security.com
    ```
 
 2. Navigate to the project directory:
@@ -108,4 +110,4 @@ This project is for educational purposes only and is not intended for use in pro
 
 ## License
 
-This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the [GNU Affero General Public License v3.0 (GNU AGPLv3)](https://www.gnu.org/licenses/agpl-3.0.html). This license ensures that any modified versions of this software must also be distributed under the same license, and the complete source code must be made available when used to provide a service over a network.
