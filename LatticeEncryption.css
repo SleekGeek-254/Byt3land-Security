@@ -1,141 +1,181 @@
 /* LatticeEncryption.css */
 
 .container {
-    min-height: 100vh;
-    background-color: #1a202c;
-    color: #f7fafc;
-    padding: 1rem;
+  min-height: 100vh;
+  background-color: #1a202c;
+  color: #f7fafc;
+  padding: 1rem;
+}
+
+.content {
+  width: 90vw;
+
+  margin: 0 auto;
+  position: relative;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: #ed64a6;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+p{
+  text-align: left;
+}
+
+.bento-box {
+  background-color: #2d3748;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Add this line */
+}
+
+.bento-box-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #ed64a6;
+  display: flex;
+  align-items: center;
+}
+
+.bento-box-title svg {
+  margin-right: 0.5rem;
+}
+
+.input-area {
+  grid-column: span 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-textarea {
+  width: 100%;
+  max-width: 600px;
+  padding: 0.5rem;
+  background-color: #4a5568;
+  border: 1px solid #4a5568;
+  border-radius: 0.375rem;
+  color: white;
+  resize: none;
+  height: 8rem;
+  margin-bottom: 1rem;
+}
+
+.input-textarea:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #ed64a6;
+  border-color: transparent;
+}
+
+.encrypt-button {
+  width: 100%;
+  max-width: 600px;
+  background-color: #718096;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.encrypt-button:hover:not(:disabled) {
+  background-color: #b83280;
+}
+
+.encrypt-button:disabled {
+  background-color: #718096;
+  cursor: not-allowed;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
-  
-  .content {
-    max-width: 80rem;
-    margin: 0 auto;
+  to {
+    transform: rotate(360deg);
   }
-  
-  .title {
-    font-size: 2.25rem;
-    font-weight: bold;
-    margin-bottom: 2rem;
-    text-align: center;
-    color: #ed64a6;
-  }
-  
-  .bento-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-  }
-  
-  .bento-box {
-    background-color: #2d3748;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .bento-box-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #ed64a6;
-    display: flex;
-    align-items: center;
-  }
-  
-  .bento-box-title svg {
-    margin-right: 0.5rem;
-  }
-  
-  .input-area {
-    grid-column: span 3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .input-textarea {
-    width: 100%;
-    max-width: 600px;
-    padding: 0.5rem;
-    background-color: #4a5568;
-    border: 1px solid #4a5568;
-    border-radius: 0.375rem;
-    color: white;
-    resize: none;
-    height: 8rem;
-    margin-bottom: 1rem;
-  }
-  
-  .input-textarea:focus {
-    outline: none;
-    ring: 2px;
-    ring-color: #ed64a6;
-    border-color: transparent;
-  }
-  
-  .encrypt-button {
-    width: 100%;
-    max-width: 600px;
-    background-color: #d53f8c;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.3s ease-in-out;
-  }
-  
-  .encrypt-button:hover {
-    background-color: #b83280;
-  }
-  
-  .message-display {
-    background-color: #4a5568;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    overflow-x: auto;
-    font-size: 0.875rem;
-    border: 1px solid #4a5568;
-    color: white;
-    height: 10rem;
-  }
-  
-  .decrypted-message {
-    margin-top: 0.5rem;
-  }
-  
-  .decrypted-message-correct {
-    border-color: #48bb78;
-  }
-  
-  .decrypted-message-incorrect {
-    border-color: #f56565;
-  }
-  
-  .timestamps {
-    grid-column: span 3;
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  
-  .timestamp {
-    flex: 1;
-    background-color: #4a5568;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    border: 1px solid #4299e1;
-  }
-  
-  .timestamp-label {
-    font-size: 0.875rem;
-    color: #ed64a6;
-    margin-bottom: 0.25rem;
-  }
-  
-  .timestamp-value {
-    font-size: 1rem;
-    color: white;
-    font-weight: bold;
-  }
+}
+.loader-spin {
+  display: inline-block;
+  width: 24px; /* Ensure the size is visible */
+  height: 24px; /* Ensure the size is visible */
+  border: 2px solid #f7fafc; /* Set border color to match your design */
+  border-top-color: transparent; /* Make the top border transparent for the spinning effect */
+  border-radius: 50%;
+  border-width: 3px;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem; /* Add spacing to the text */
+}
+
+.message-display {
+  background-color: #4a5568;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  border: 1px solid #4a5568;
+  color: white;
+  height: 20rem;
+  word-wrap: break-word; /* Add this line */
+  white-space: pre-wrap; /* Add this line */
+  overflow-y: auto; /* Add this line */
+}
+
+.decrypted-message {
+  margin-top: 0.5rem;
+}
+
+.decrypted-message-correct {
+  border-color: #48bb78;
+}
+
+.decrypted-message-incorrect {
+  border-color: #f56565;
+}
+
+.timestamps {
+  grid-column: span 3;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.timestamp {
+  flex: 1;
+  background-color: #4a5568;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #4299e1;
+}
+
+.timestamp-label {
+  font-size: 0.875rem;
+  color: #ed64a6;
+  margin-bottom: 0.25rem;
+}
+
+.timestamp-value {
+  font-size: 1rem;
+  color: white;
+  font-weight: bold;
+}
