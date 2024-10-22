@@ -14,7 +14,8 @@ This project demonstrates a basic implementation of lattice-based encryption usi
 - [Disclaimer](#disclaimer)
 
 ## Overview
-![image](https://github.com/user-attachments/assets/57b7b62e-9b9e-4c49-acc4-356ed2f18636)
+![image](https://github.com/user-attachments/assets/76a554d8-76dc-4fdf-b683-cc8fe2832cdb)
+
 
 This React-based web application showcases a simple lattice-based encryption system. Users can input a message, encrypt it using LWE-based encryption, and then decrypt it using both correct and incorrect keys to demonstrate the system's functionality.
 
