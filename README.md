@@ -49,6 +49,7 @@ This React-based web application showcases a simple lattice-based encryption sys
    npm start
    ```
 
+
 5. Open your browser and visit `http://localhost:3000`
 
 ## Usage
@@ -104,3 +105,7 @@ For a more detailed security analysis, please refer to the [Security Analysis do
 ## Disclaimer
 
 This project is for educational purposes only and is not intended for use in production environments or for securing sensitive information. The implementation has not undergone a formal security audit and may contain vulnerabilities.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
